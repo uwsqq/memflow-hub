@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MemFlow Hub — колоды сообщества</title>
-<meta name="description" content="Каталог колод для MemFlow: скачивай готовые или публикуй свои — они сразу появляются в приложении.">
+<meta name="description" content="Каталог колод для MemFlow: скачивай готовые или публикуй свои через GitHub issue — они появляются мгновенно.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
 <style>
 :root{--bg:#0b0e17;--card:#161b30;--card2:#1c2240;--line:#252c4d;--text:#e8ecff;--muted:#8b93b8;--acc:#6c5ce7;--acc2:#00d2c6;--bad:#e74c3c;--grad:linear-gradient(135deg,var(--acc),var(--acc2))}
@@ -30,6 +30,7 @@ h1{font-size:clamp(24px,5vw,38px);background:linear-gradient(90deg,#a29bfe,#00d2
 .meta{color:var(--muted);font-size:13px;display:flex;gap:12px;flex-wrap:wrap}
 .tags{display:flex;gap:6px;flex-wrap:wrap}
 .tag{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:2px 9px;font-size:11.5px;color:var(--acc2)}
+.tag.community{color:#fd79a8}
 .btns{display:flex;gap:9px;margin-top:auto}
 .btn{flex:1;text-align:center;padding:11px 8px;border-radius:12px;font-weight:700;font-size:13.5px;cursor:pointer;border:1px solid var(--line);background:var(--card2);color:var(--text);text-decoration:none;transition:transform .15s,border-color .2s}
 .btn:hover{border-color:var(--acc);transform:translateY(-1px)}
@@ -57,7 +58,7 @@ footer a{color:var(--acc2);text-decoration:none}
 <header>
   <div class="logo">☁️</div>
   <h1>MemFlow Hub</h1>
-  <p class="sub">Колоды сообщества: скачивай готовые или публикуй свои —<br>они сразу появляются в приложении у всех.</p>
+  <p class="sub">Колоды сообщества: скачивай готовые или публикуй свои —<br>новая колода появляется здесь сразу после issue.</p>
 </header>
 <div class="stats" id="stats"></div>
 <div class="searchrow"><input class="searchbox" id="q" placeholder="🔍 Поиск: название, предмет, автор…" oninput="render()"></div>
@@ -66,11 +67,11 @@ footer a{color:var(--acc2);text-decoration:none}
 
 <div class="panel">
   <h2>📤 Публиковать колоду</h2>
-  <p>Колода появится в каталоге автоматически — через GitHub-бота, за пару минут.</p>
+  <p>Нужен только аккаунт GitHub — колода появится в каталоге мгновенно.</p>
   <ol>
     <li>В MemFlow открой колоду → кнопка <b>🔗 Поделиться</b> → скопируется ссылка.</li>
     <li>Вставь её сюда (или JSON вида <b>{"name":…,"cards":[{"front":…,"back":…}]}</b>).</li>
-    <li>Проверь превью и нажми <b>«Открыть GitHub с готовым issue»</b> — бот опубликует сам.</li>
+    <li>Проверь превью и нажми <b>«Открыть GitHub с готовым issue»</b> → опубликуй.</li>
   </ol>
   <textarea id="pubIn" placeholder="#deck=eyJ…ссылка из MemFlow… или {&quot;name&quot;:&quot;Моя колода&quot;,&quot;cards&quot;:[…]}"></textarea>
   <div class="row">
@@ -87,34 +88,68 @@ footer a{color:var(--acc2);text-decoration:none}
 </div>
 <script>
 const APP='https://uwsqq.github.io/memflow/';
-const RAW='https://raw.githubusercontent.com/uwsqq/memflow-hub/main/';
+const ISSUES_API='https://api.github.com/repos/uwsqq/memflow-hub/issues?state=all&per_page=100';
 let CAT=[];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function loadCat(cb){
-  fetch('catalog.json',{cache:'no-store'}).then(r=>r.json()).then(cb).catch(()=>{
-    /* file:// фолбэк — пустой каталог с подсказкой */
-    cb([]);
-  });
+const b64=J=>btoa(unescape(encodeURIComponent(JSON.stringify(J))));
+function importHref(name,cards){return APP+'#deck='+b64({name:name,cards:cards})}
+function dataHref(d){
+  const J={name:d.name,cards:d.cards.map(c=>({front:c.front,back:c.back,...(c.type?{type:c.type}:{}),...(c.tags&&c.tags.length?{tags:c.tags}:{})}))};
+  return 'data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(J,null,1));
+}
+/* каталог = сид-файлы + колоды из issues (issues свежее и главнее) */
+async function loadCat(){
+  let seeds=[];
+  try{seeds=await(await fetch('catalog.json',{cache:'no-store'})).json()}catch(e){}
+  let issueDecks=[],via='net';
+  try{
+    const r=await fetch(ISSUES_API,{headers:{Accept:'application/vnd.github+json'}});
+    if(r.ok){
+      const issues=await r.json();
+      issueDecks=issues.map(is=>{
+        if(!is.pull_request&&(is.title||'').startsWith('[deck]')){
+          const m=(is.body||'').match(/```json\s*([\s\S]*?)\s*```/)||((is.body||'').match(/```\s*(\{[\s\S]*?\})\s*```/));
+          if(m){
+            try{
+              const j=JSON.parse(m[1]);
+              const cards=(j.cards||[]).filter(c=>c&&c.front&&c.back).slice(0,500)
+                .map(c=>({front:String(c.front).slice(0,300),back:String(c.back).slice(0,300),...(c.type?{type:c.type}:{}),...(c.tags?{tags:c.tags}:{})}));
+              if(cards.length)return{name:String(j.name||is.title.replace(/^\[deck\]\s*/,'')).slice(0,60),cards:cards,author:is.user?is.user.login:'—',date:(is.created_at||'').slice(0,10),community:true,html:is.html_url};
+            }catch(e){}
+          }
+        }
+        return null;
+      }).filter(Boolean);
+      try{localStorage.setItem('hub-issues-cache',JSON.stringify({t:Date.now(),d:issueDecks}))}catch(e){}
+    }
+  }catch(e){
+    try{const c=JSON.parse(localStorage.getItem('hub-issues-cache')||'null');if(c&&c.d){issueDecks=c.d;via='cache'}}catch(e2){}
+  }
+  const seen=new Set();
+  CAT=issueDecks.concat(seeds.map(s=>({...s,community:false})))
+    .filter(x=>{const k=x.name;if(seen.has(k))return false;seen.add(k);return true});
+  return via;
 }
 function render(){
   const q=document.getElementById('q').value.trim().toLowerCase();
   const g=document.getElementById('grid');
-  const items=CAT.filter(x=>!q||[x.name,x.author,(x.tags||[]).join(' ')].join(' ').toLowerCase().includes(q))
+  const items=CAT.filter(x=>!q||[x.name,x.author,String(x.tags||[])].join(' ').toLowerCase().includes(q))
     .slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   g.innerHTML=items.map((x,i)=>{
-    const raw=RAW+x.file;
+    const href=x.community?dataHref(x):x.file;
     return '<div class="deck" style="animation-delay:'+Math.min(i,10)*45+'ms">'+
       '<h3>'+esc(x.name)+'</h3>'+
-      '<div class="meta"><span>🗂 '+x.cards+' карт</span><span>👤 '+esc(x.author||'—')+'</span><span>📅 '+(x.date||'')+'</span></div>'+
-      '<div class="tags">'+(x.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+'</div>'+
-      '<div class="btns"><a class="btn" href="'+esc(x.file)+'" download="'+esc(x.file.split('/').pop())+'">⬇ JSON</a>'+
-      '<a class="btn primary" href="'+APP+'#url='+encodeURIComponent(raw)+'">➕ В MemFlow</a></div></div>';
+      '<div class="meta"><span>🗂 '+x.cards.length+' карт</span><span>👤 '+esc(x.author||'—')+'</span><span>📅 '+(x.date||'')+'</span></div>'+
+      '<div class="tags">'+(x.community?'<span class="tag community">сообщество</span>':'')+(x.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+'</div>'+
+      '<div class="btns"><a class="btn" href="'+href+'" download="'+esc((x.name||'deck').replace(/[^\wа-яА-Я-]+/g,'_').slice(0,30))+'.json">⬇ JSON</a>'+
+      '<a class="btn primary" href="'+esc(importHref(x.name,x.cards))+'">➕ В MemFlow</a></div></div>';
   }).join('');
   document.getElementById('empty').style.display=items.length?'none':'';
 }
 function stats(){
-  const decks=CAT.length,cards=CAT.reduce((s,x)=>s+(x.cards||0),0),authors=new Set(CAT.map(x=>x.author)).size;
-  document.getElementById('stats').innerHTML=[[decks,'колод'],[cards,'карточек'],[authors,'авторов']]
+  const decks=CAT.length,cards=CAT.reduce((s,x)=>s+x.cards.length,0),authors=new Set(CAT.map(x=>x.author)).size;
+  const comm=CAT.filter(x=>x.community).length;
+  document.getElementById('stats').innerHTML=[[decks,'колод'],[cards,'карточек'],[authors,'авторов'],[comm,'от сообщества']]
     .map(([n,l])=>'<div class="stat"><b>'+n+'</b><span>'+l+'</span></div>').join('');
 }
 /* ===== публикация ===== */
@@ -143,7 +178,7 @@ function prep(){
   go.href='https://github.com/uwsqq/memflow-hub/issues/new?title='+encodeURIComponent('[deck] '+name)+'&body='+encodeURIComponent(body);
   go.style.display='';
 }
-loadCat(c=>{CAT=c||[];stats();render()});
+loadCat().then(()=>{stats();render()});
 </script>
 </body>
 </html>
