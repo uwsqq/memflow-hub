@@ -1,0 +1,7 @@
+[
+ {"file": "decks/oge-math.json", "name": "📐 ОГЭ Математика", "cards": 8, "author": "uwsqq", "date": "2026-10-24", "tags": ["ОГЭ", "математика"]},
+ {"file": "decks/math-basics.json", "name": "📐 Математика: база", "cards": 7, "author": "uwsqq", "date": "2026-10-24", "tags": ["математика"]},
+ {"file": "decks/eng-words-1.json", "name": "🇬🇧 Английский: слова 1–12", "cards": 12, "author": "uwsqq", "date": "2026-10-24", "tags": ["английский"]},
+ {"file": "decks/rus-rules.json", "name": "📖 Русский: правила", "cards": 7, "author": "uwsqq", "date": "2026-10-24", "tags": ["русский"]},
+ {"file": "decks/hist-dates.json", "name": "📜 История: даты", "cards": 7, "author": "uwsqq", "date": "2026-10-24", "tags": ["история"]}
+]

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MemFlow Hub — колоды сообщества</title>
+<meta name="description" content="Каталог колод для MemFlow: скачивай готовые или публикуй свои — они сразу появляются в приложении.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+<style>
+:root{--bg:#0b0e17;--card:#161b30;--card2:#1c2240;--line:#252c4d;--text:#e8ecff;--muted:#8b93b8;--acc:#6c5ce7;--acc2:#00d2c6;--bad:#e74c3c;--grad:linear-gradient(135deg,var(--acc),var(--acc2))}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:radial-gradient(1200px 600px at 50% -200px,#1a1440,var(--bg) 60%);color:var(--text);font:15px/1.6 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;min-height:100vh}
+.wrap{max-width:1000px;margin:0 auto;padding:34px 20px 80px}
+header{text-align:center;padding:30px 0 10px}
+.logo{font-size:52px;display:inline-block;animation:float 4s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+h1{font-size:clamp(24px,5vw,38px);background:linear-gradient(90deg,#a29bfe,#00d2c6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.sub{color:var(--muted);margin-top:8px;font-size:15px}
+.stats{display:flex;gap:22px;justify-content:center;margin:22px 0 8px;flex-wrap:wrap}
+.stat{text-align:center}
+.stat b{font-size:24px;color:var(--acc2);display:block}
+.stat span{color:var(--muted);font-size:12.5px}
+.searchrow{display:flex;justify-content:center;margin:18px 0}
+.searchbox{width:min(460px,100%);padding:13px 18px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:15px;outline:none}
+.searchbox:focus{border-color:var(--acc)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px;margin-top:24px}
+.deck{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:10px;animation:up .5s cubic-bezier(.2,.9,.25,1.04) both}
+@keyframes up{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+.deck h3{font-size:16.5px}
+.meta{color:var(--muted);font-size:13px;display:flex;gap:12px;flex-wrap:wrap}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:2px 9px;font-size:11.5px;color:var(--acc2)}
+.btns{display:flex;gap:9px;margin-top:auto}
+.btn{flex:1;text-align:center;padding:11px 8px;border-radius:12px;font-weight:700;font-size:13.5px;cursor:pointer;border:1px solid var(--line);background:var(--card2);color:var(--text);text-decoration:none;transition:transform .15s,border-color .2s}
+.btn:hover{border-color:var(--acc);transform:translateY(-1px)}
+.btn.primary{background:var(--grad);border:none;color:#fff}
+.panel{background:rgba(22,27,48,.72);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:22px;padding:26px;margin-top:40px}
+.panel h2{font-size:21px;margin-bottom:8px}
+.panel p{color:var(--muted);font-size:14px}
+ol{color:var(--muted);font-size:14px;margin:14px 0 14px 22px}
+ol b{color:var(--text)}
+textarea{width:100%;min-height:120px;background:var(--card);border:1px solid var(--line);border-radius:14px;color:var(--text);padding:14px;font:13px/1.5 Consolas,monospace;resize:vertical;outline:none}
+textarea:focus{border-color:var(--acc)}
+.row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.preview{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:13.5px}
+.preview .ok{color:var(--acc2);font-weight:700}
+.preview .err{color:var(--bad);font-weight:700}
+.preview ul{margin:8px 0 0 20px;color:var(--muted)}
+footer{text-align:center;color:var(--muted);font-size:13px;margin-top:50px}
+footer a{color:var(--acc2);text-decoration:none}
+.empty{text-align:center;color:var(--muted);padding:40px 0}
+@media(max-width:560px){.wrap{padding:20px 14px 60px}.panel{padding:18px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="logo">☁️</div>
+  <h1>MemFlow Hub</h1>
+  <p class="sub">Колоды сообщества: скачивай готовые или публикуй свои —<br>они сразу появляются в приложении у всех.</p>
+</header>
+<div class="stats" id="stats"></div>
+<div class="searchrow"><input class="searchbox" id="q" placeholder="🔍 Поиск: название, предмет, автор…" oninput="render()"></div>
+<div class="grid" id="grid"></div>
+<div class="empty" id="empty" style="display:none">Ничего не найдено</div>
+
+<div class="panel">
+  <h2>📤 Публиковать колоду</h2>
+  <p>Колода появится в каталоге автоматически — через GitHub-бота, за пару минут.</p>
+  <ol>
+    <li>В MemFlow открой колоду → кнопка <b>🔗 Поделиться</b> → скопируется ссылка.</li>
+    <li>Вставь её сюда (или JSON вида <b>{"name":…,"cards":[{"front":…,"back":…}]}</b>).</li>
+    <li>Проверь превью и нажми <b>«Открыть GitHub с готовым issue»</b> — бот опубликует сам.</li>
+  </ol>
+  <textarea id="pubIn" placeholder="#deck=eyJ…ссылка из MemFlow… или {&quot;name&quot;:&quot;Моя колода&quot;,&quot;cards&quot;:[…]}"></textarea>
+  <div class="row">
+    <button class="btn" style="flex:0 0 auto" onclick="prep()">🔎 Проверить</button>
+    <a class="btn primary" id="pubGo" style="flex:0 0 auto;display:none" target="_blank" rel="noopener">🐙 Открыть GitHub с готовым issue</a>
+  </div>
+  <div class="preview" id="preview" style="display:none"></div>
+</div>
+
+<footer>
+  Приложение: <a href="https://uwsqq.github.io/memflow/" target="_blank" rel="noopener">MemFlow</a> ·
+  Репозиторий: <a href="https://github.com/uwsqq/memflow-hub" target="_blank" rel="noopener">GitHub</a>
+</footer>
+</div>
+<script>
+const APP='https://uwsqq.github.io/memflow/';
+const RAW='https://raw.githubusercontent.com/uwsqq/memflow-hub/main/';
+let CAT=[];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function loadCat(cb){
+  fetch('catalog.json',{cache:'no-store'}).then(r=>r.json()).then(cb).catch(()=>{
+    /* file:// фолбэк — пустой каталог с подсказкой */
+    cb([]);
+  });
+}
+function render(){
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  const g=document.getElementById('grid');
+  const items=CAT.filter(x=>!q||[x.name,x.author,(x.tags||[]).join(' ')].join(' ').toLowerCase().includes(q))
+    .slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  g.innerHTML=items.map((x,i)=>{
+    const raw=RAW+x.file;
+    return '<div class="deck" style="animation-delay:'+Math.min(i,10)*45+'ms">'+
+      '<h3>'+esc(x.name)+'</h3>'+
+      '<div class="meta"><span>🗂 '+x.cards+' карт</span><span>👤 '+esc(x.author||'—')+'</span><span>📅 '+(x.date||'')+'</span></div>'+
+      '<div class="tags">'+(x.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+'</div>'+
+      '<div class="btns"><a class="btn" href="'+esc(x.file)+'" download="'+esc(x.file.split('/').pop())+'">⬇ JSON</a>'+
+      '<a class="btn primary" href="'+APP+'#url='+encodeURIComponent(raw)+'">➕ В MemFlow</a></div></div>';
+  }).join('');
+  document.getElementById('empty').style.display=items.length?'none':'';
+}
+function stats(){
+  const decks=CAT.length,cards=CAT.reduce((s,x)=>s+(x.cards||0),0),authors=new Set(CAT.map(x=>x.author)).size;
+  document.getElementById('stats').innerHTML=[[decks,'колод'],[cards,'карточек'],[authors,'авторов']]
+    .map(([n,l])=>'<div class="stat"><b>'+n+'</b><span>'+l+'</span></div>').join('');
+}
+/* ===== публикация ===== */
+function parsePub(){
+  const raw=document.getElementById('pubIn').value.trim();
+  if(!raw)return null;
+  if(raw.includes('#deck=')){
+    try{return JSON.parse(decodeURIComponent(escape(atob(raw.split('#deck=')[1].split('&')[0]))))}catch(e){return null}
+  }
+  const m=raw.match(/\{[\s\S]*\}/);
+  if(!m)return null;
+  try{return JSON.parse(m[0])}catch(e){return null}
+}
+function prep(){
+  const pv=document.getElementById('preview'),go=document.getElementById('pubGo');
+  pv.style.display='';go.style.display='none';
+  const j=parsePub();
+  if(!j){pv.innerHTML='<span class="err">❌ Не понял формат. Вставь ссылку #deck=… из MemFlow или JSON с name и cards.';return}
+  const name=String(j.name||'').slice(0,60);
+  const cards=(Array.isArray(j.cards)?j.cards:[]).filter(c=>c&&c.front&&c.back&&String(c.front).length<=300&&String(c.back).length<=300).slice(0,500);
+  if(!name||!cards.length){pv.innerHTML='<span class="err">❌ Нужны name и хотя бы одна карточка (front/back ≤ 300 символов).</span>';return}
+  pv.innerHTML='<span class="ok">✅ '+esc(name)+' — '+cards.length+' карточек</span><ul>'+
+    cards.slice(0,3).map(c=>'<li>'+esc(String(c.front).slice(0,60))+' → '+esc(String(c.back).slice(0,60))+'</li>').join('')+
+    (cards.length>3?'<li>…</li>':'')+'</ul>';
+  const body='```json\n'+JSON.stringify({name:name,cards:cards.map(c=>({front:String(c.front),back:String(c.back),...(c.type?{type:c.type}:{})}))},null,1)+'\n```\n(опубликовано через MemFlow Hub)';
+  go.href='https://github.com/uwsqq/memflow-hub/issues/new?title='+encodeURIComponent('[deck] '+name)+'&body='+encodeURIComponent(body);
+  go.style.display='';
+}
+loadCat(c=>{CAT=c||[];stats();render()});
+</script>
+</body>
+</html>

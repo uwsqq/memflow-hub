@@ -1,0 +1,18 @@
+{
+ "name": "🇬🇧 Английский: слова 1–12",
+ "author": "uwsqq",
+ "cards": [
+  {"front": "apple", "back": "яблоко", "tags": ["еда"]},
+  {"front": "house", "back": "дом", "tags": ["жилье"]},
+  {"front": "water", "back": "вода", "tags": ["природа"]},
+  {"front": "friend", "back": "друг", "tags": ["люди"]},
+  {"front": "to run", "back": "бежать", "tags": ["глаголы"]},
+  {"front": "beautiful", "back": "красивый", "tags": ["прил"]},
+  {"front": "yesterday", "back": "вчера", "tags": ["время"]},
+  {"front": "to think", "back": "думать", "tags": ["глаголы"]},
+  {"front": "book", "back": "книга", "tags": ["школа"]},
+  {"front": "city", "back": "город", "tags": ["место"]},
+  {"front": "red", "back": "красный", "tags": ["цвета"]},
+  {"front": "dog", "back": "собака", "tags": ["животные"]}
+ ]
+}
