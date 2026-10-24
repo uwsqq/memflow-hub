@@ -97,10 +97,18 @@ function dataHref(d){
   const J={name:d.name,cards:d.cards.map(c=>({front:c.front,back:c.back,...(c.type?{type:c.type}:{}),...(c.tags&&c.tags.length?{tags:c.tags}:{})}))};
   return 'data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(J,null,1));
 }
-/* каталог = сид-файлы + колоды из issues (issues свежее и главнее) */
+/* каталог = сид-файлы (подгружаем сами колоды) + колоды из issues (issues свежее и главнее) */
 async function loadCat(){
   let seeds=[];
   try{seeds=await(await fetch('catalog.json',{cache:'no-store'})).json()}catch(e){}
+  /* для сидов cards в каталоге — это счётчик; тянем настоящий JSON колоды */
+  seeds=await Promise.all(seeds.map(async s=>{
+    try{
+      const d=await(await fetch(s.file,{cache:'no-store'})).json();
+      return {...s,name:d.name||s.name,author:d.author||s.author,date:d.date||s.date,cards:(d.cards||[]).filter(c=>c&&c.front&&c.back),community:false};
+    }catch(e){return null}
+  }));
+  seeds=seeds.filter(s=>s&&s.cards.length);
   let issueDecks=[],via='net';
   try{
     const r=await fetch(ISSUES_API,{headers:{Accept:'application/vnd.github+json'}});
@@ -126,7 +134,7 @@ async function loadCat(){
     try{const c=JSON.parse(localStorage.getItem('hub-issues-cache')||'null');if(c&&c.d){issueDecks=c.d;via='cache'}}catch(e2){}
   }
   const seen=new Set();
-  CAT=issueDecks.concat(seeds.map(s=>({...s,community:false})))
+  CAT=issueDecks.concat(seeds)
     .filter(x=>{const k=x.name;if(seen.has(k))return false;seen.add(k);return true});
   return via;
 }
