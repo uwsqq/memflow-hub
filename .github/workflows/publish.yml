@@ -31,6 +31,47 @@ jobs:
         if: success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue close "${{ github.event.issue.number }}" -R "$GITHUB_REPOSITORY" -c "Колода опубликована! Обнови страницу хаба через минуту: https://uwsqq.github.io/memflow-hub/"
+      - name: Report failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" -R "$GITHUB_REPOSITORY" -b "Не получилось опубликовать: проверь формат (нужен блок json с name и cards) и попробуй снова."
+name: Publish deck
+on:
+  issues:
+    types: [opened]
+jobs:
+  publish:
+    if: startsWith(github.event.issue.title, '[deck]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build deck
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_USER: ${{ github.event.issue.user.login }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
+        run: python scripts/publish.py
+      - name: Commit and push
+        run: |
+          git config user.name "memflow-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && echo "no changes" || (git commit -m "deck: auto-publish #${{ github.event.issue.number }}" && git push)
+      - name: Close issue
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh issue close "${{ github.event.issue.number }}" -R "$GITHUB_REPOSITORY" -c "Колода опубликована! Обнови страницу хаба через минуту: https://uwsqq.github.io/memflow-hub/"
       - name: Report failure
         if: failure()
