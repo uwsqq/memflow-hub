@@ -88,7 +88,7 @@ footer a{color:var(--acc2);text-decoration:none}
 </div>
 <script>
 const APP='https://uwsqq.github.io/memflow/';
-const ISSUES_API='https://api.github.com/repos/uwsqq/memflow-hub/issues?state=all&per_page=100';
+const ISSUES_API='https://api.github.com/repos/uwsqq/memflow-hub/issues?state=open&per_page=100';
 let CAT=[];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const b64=J=>btoa(unescape(encodeURIComponent(JSON.stringify(J))));
